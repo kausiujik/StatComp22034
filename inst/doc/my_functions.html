@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Hu Weitao (22034)" />
+
+<meta name="date" content="2022-11-28" />
+
+<title>My Functions (Regression, Mixture Model)</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ background-color: #f8f8f8; }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ef2929; } 
+code span.an { color: #8f5902; font-weight: bold; font-style: italic; } 
+code span.at { color: #c4a000; } 
+code span.bn { color: #0000cf; } 
+code span.cf { color: #204a87; font-weight: bold; } 
+code span.ch { color: #4e9a06; } 
+code span.cn { color: #000000; } 
+code span.co { color: #8f5902; font-style: italic; } 
+code span.cv { color: #8f5902; font-weight: bold; font-style: italic; } 
+code span.do { color: #8f5902; font-weight: bold; font-style: italic; } 
+code span.dt { color: #204a87; } 
+code span.dv { color: #0000cf; } 
+code span.er { color: #a40000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #0000cf; } 
+code span.fu { color: #000000; } 
+code span.im { } 
+code span.in { color: #8f5902; font-weight: bold; font-style: italic; } 
+code span.kw { color: #204a87; font-weight: bold; } 
+code span.op { color: #ce5c00; font-weight: bold; } 
+code span.ot { color: #8f5902; } 
+code span.pp { color: #8f5902; font-style: italic; } 
+code span.sc { color: #000000; } 
+code span.ss { color: #4e9a06; } 
+code span.st { color: #4e9a06; } 
+code span.va { color: #000000; } 
+code span.vs { color: #4e9a06; } 
+code span.wa { color: #8f5902; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">My Functions (Regression, Mixture
+Model)</h1>
+<h4 class="author">Hu Weitao (22034)</h4>
+<h4 class="date">2022-11-28</h4>
+
+
+<div id="TOC">
+<ul>
+<li><a href="#overview" id="toc-overview">Overview</a></li>
+<li><a href="#conducting-individualized-regression-for-clustering" id="toc-conducting-individualized-regression-for-clustering">Conducting
+individualized regression for clustering</a></li>
+<li><a href="#conducting-em-for-repeated-experiment" id="toc-conducting-em-for-repeated-experiment">Conducting EM for
+repeated experiment</a></li>
+<li><a href="#benchmarking-emforrer-and-emforrec" id="toc-benchmarking-emforrer-and-emforrec">Benchmarking
+<em>emforreR</em> and <em>emforreC</em></a></li>
+</ul>
+</div>
+
+<div id="overview" class="section level2">
+<h2>Overview</h2>
+<p><strong>StatComp22034</strong> is a simple R package developed to
+combine all my homework in ‘Statistical Computing’ course and several
+useful functions for my projects. In addition, we can also compare the
+performance of R and C++ (implemented through the R package
+<em>Rcpp</em>). More, two functions are considered, namely,
+<em>indregclu</em> (individualized regression for clustering) and
+<em>emforre</em> (EM algorithm for repeated experiment). For the latter
+function, both R and Rcpp versions are produced. Namely
+<em>emforreR</em> for R and <em>emforreC</em> for C++.</p>
+<p>The R package ‘microbenchmark’ can be used to benchmark the above R
+and C++ functions.</p>
+</div>
+<div id="conducting-individualized-regression-for-clustering" class="section level2">
+<h2>Conducting individualized regression for clustering</h2>
+<p>The source R code for <em>indregclu</em> is as follows:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">function</span>(data, N, K) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  update_delta <span class="ot">&lt;-</span> <span class="cf">function</span>(gamma, beta, nu, lambda, rho) {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    val <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="at">nrow =</span> K, <span class="at">ncol =</span> N)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (k <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>K) { val[k,] <span class="ot">&lt;-</span> (<span class="fu">rep</span>(gamma[k], N) <span class="sc">-</span> beta <span class="sc">-</span> nu <span class="sc">/</span> rho)<span class="sc">^</span><span class="dv">2</span> }</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    result <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">0</span>, N)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>N) {</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>      cond <span class="ot">&lt;-</span> val[, i] <span class="sc">&lt;</span> <span class="dv">2</span> <span class="sc">*</span> lambda <span class="sc">/</span> rho</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>      indT <span class="ot">&lt;-</span> <span class="fu">which</span>(cond, <span class="at">arr.ind =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (<span class="fu">length</span>(indT) <span class="sc">==</span> <span class="dv">0</span>) {result[i] <span class="ot">&lt;-</span> beta[i] <span class="sc">+</span> nu[i] <span class="sc">/</span> rho}</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (<span class="fu">length</span>(indT) <span class="sc">==</span> <span class="dv">1</span>) {result[i] <span class="ot">&lt;-</span> gamma[indT[<span class="dv">1</span>]]}</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (<span class="fu">length</span>(indT) <span class="sc">&gt;</span> <span class="dv">1</span>) {result[i] <span class="ot">&lt;-</span> gamma[<span class="fu">which.min</span>(val[indT, i])]}</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(result)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> data<span class="sc">$</span>y; X <span class="ot">&lt;-</span> <span class="fu">bdiag</span>(<span class="fu">diag</span>(data<span class="sc">$</span>X)); Z <span class="ot">&lt;-</span> data<span class="sc">$</span>Z; tildeX <span class="ot">&lt;-</span> <span class="fu">cbind</span>(X, Z)</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  lambda <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">/</span> N; rho <span class="ot">&lt;-</span> <span class="dv">5</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  Q <span class="ot">&lt;-</span> Z <span class="sc">%*%</span> <span class="fu">solve</span>(<span class="fu">t</span>(Z) <span class="sc">%*%</span> Z) <span class="sc">%*%</span> <span class="fu">t</span>(Z); P <span class="ot">&lt;-</span> <span class="fu">diag</span>(N) <span class="sc">-</span> Q</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>  beta0 <span class="ot">&lt;-</span> <span class="fu">solve</span>(<span class="fu">t</span>(X) <span class="sc">%*%</span> P <span class="sc">%*%</span> X <span class="sc">+</span> <span class="fl">0.002</span> <span class="sc">*</span> <span class="fu">diag</span>(N)) <span class="sc">%*%</span> <span class="fu">t</span>(X) <span class="sc">%*%</span> P <span class="sc">%*%</span> y</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>  alpha0 <span class="ot">&lt;-</span> <span class="fu">solve</span>(<span class="fu">t</span>(Z) <span class="sc">%*%</span> Z) <span class="sc">%*%</span> <span class="fu">t</span>(Z) <span class="sc">%*%</span> (y <span class="sc">-</span> X <span class="sc">%*%</span> beta0)</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>  gamma0 <span class="ot">&lt;-</span> <span class="fu">pam</span>(<span class="fu">matrix</span>(beta0, <span class="at">nrow =</span> N), <span class="at">k =</span> K)<span class="sc">$</span>medoids</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>  val <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="at">nrow =</span> K, <span class="at">ncol =</span> N)</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (k <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>K) { val[k, ] <span class="ot">&lt;-</span> (beta0<span class="sc">@</span>x <span class="sc">-</span> gamma0[k,])<span class="sc">^</span><span class="dv">2</span> }</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>  res_sg <span class="ot">&lt;-</span> <span class="fu">apply</span>(val, <span class="dv">2</span>, which.min)</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>  delta0 <span class="ot">&lt;-</span> gamma0[res_sg, ] <span class="sc">+</span> <span class="fu">rnorm</span>(N, <span class="dv">0</span>, <span class="fl">0.1</span>)</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>  nu0 <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="fl">0.1</span>, N)</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">1000</span>) {</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    betaalpha1 <span class="ot">&lt;-</span> <span class="fu">solve</span>(<span class="fu">t</span>(tildeX) <span class="sc">%*%</span> tildeX <span class="sc">+</span> <span class="fu">bdiag</span>(rho <span class="sc">*</span> <span class="fu">diag</span>(N), <span class="dv">0</span>)) <span class="sc">%*%</span> (<span class="fu">t</span>(tildeX) <span class="sc">%*%</span> y <span class="sc">+</span> <span class="fu">c</span>(rho <span class="sc">*</span> delta0 <span class="sc">-</span> nu0, <span class="dv">0</span>))</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    beta1 <span class="ot">&lt;-</span> betaalpha1[<span class="dv">1</span><span class="sc">:</span>N]</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    alpha1 <span class="ot">&lt;-</span> betaalpha1[<span class="sc">-</span>(<span class="dv">1</span><span class="sc">:</span>N)]</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>    delta1 <span class="ot">&lt;-</span> <span class="fu">update_delta</span>(gamma0, beta1, nu0, lambda, rho)</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    gamma1 <span class="ot">&lt;-</span> <span class="fu">pam</span>(<span class="fu">matrix</span>(delta1, <span class="at">nrow =</span> N), <span class="at">k =</span> K)<span class="sc">$</span>medoids</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>    nu1 <span class="ot">&lt;-</span> nu0 <span class="sc">+</span> rho <span class="sc">*</span> (beta1 <span class="sc">-</span> delta1)</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>    res <span class="ot">&lt;-</span> beta1 <span class="sc">-</span> delta1</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">sqrt</span>(<span class="fu">sum</span>((beta1 <span class="sc">-</span> beta0)<span class="sc">^</span><span class="dv">2</span>))<span class="sc">/</span>N <span class="sc">+</span> <span class="fu">sqrt</span>(<span class="fu">sum</span>((alpha1 <span class="sc">-</span> alpha0)<span class="sc">^</span><span class="dv">2</span>)) <span class="sc">+</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>        <span class="fu">sqrt</span>(<span class="fu">sum</span>((gamma1 <span class="sc">-</span> gamma0)<span class="sc">^</span><span class="dv">2</span>)) <span class="sc">&lt;</span> <span class="fl">1e-5</span> <span class="sc">&amp;</span> <span class="fu">sqrt</span>(<span class="fu">sum</span>(res<span class="sc">^</span><span class="dv">2</span>))<span class="sc">/</span>N <span class="sc">&lt;</span> <span class="fl">1e-4</span>) { <span class="cf">break</span> }</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>    beta0 <span class="ot">&lt;-</span> beta1</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>    alpha0 <span class="ot">&lt;-</span> alpha1</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>    delta0 <span class="ot">&lt;-</span> delta1</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>    gamma0 <span class="ot">&lt;-</span> gamma1</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>    nu0 <span class="ot">&lt;-</span> nu1</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>  val <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="at">nrow =</span> K, <span class="at">ncol =</span> N)</span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (k <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>K) { val[k, ] <span class="ot">&lt;-</span> (beta0 <span class="sc">-</span> gamma0[k,])<span class="sc">^</span><span class="dv">2</span> }</span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>  res_sg <span class="ot">&lt;-</span> <span class="fu">apply</span>(val, <span class="dv">2</span>, which.min)</span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">clus_id =</span> res_sg, <span class="at">coef =</span> beta0))</span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>The problem for the code can be described below.</p>
+<p>For the <span class="math inline">\(i\)</span>th individual, let
+<span class="math inline">\(y_i\)</span> be the response variable, <span class="math inline">\(X_i\)</span> be the covariate predictor with
+heterogeneous effect, and <span class="math inline">\(Z_i\)</span> be
+the covariate population-shared predictors. We consider the hetergeneous
+regression model: <span class="math display">\[y_i=X_i\beta_i+Z_i\alpha+\varepsilon_i,\quad
+i=1,\dots,N.\]</span> We focus on <span class="math inline">\(\beta_i\)</span> to cluster the individual, that
+is, <span class="math display">\[\beta_i=\gamma_k~\text{if}~i\in\mathcal
+G_k,\quad i=1,\dots,N,k=1,\dots,K.\]</span> Or we equivalently thinking
+that the <span class="math inline">\(\beta_i\)</span> should be close to
+such <span class="math inline">\(\gamma_k\)</span>.</p>
+<p>Theory behind the function can be found on <a href="https://kausiujik.github.io/2022/11/28/StatComp22034function/">my
+website</a>.</p>
+<p>The <em>indregclu</em> function should be fed with the
+<em>data</em>(containing <span class="math inline">\(y\)</span>, <span class="math inline">\(X\)</span>, and <span class="math inline">\(Z\)</span> as a data frame), sample size
+<em>N</em>, and clusters <em>K</em>, and it will return the result of
+<span class="math inline">\(\pmb\beta=(\beta_1,\dots,\beta_N)\)</span>
+and the cluster id. See the example below.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(StatComp22034)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(sim_data)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">attach</span>(sim_data)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">indregclu</span>(sim_data, <span class="at">N =</span> <span class="dv">200</span>, <span class="at">K =</span> <span class="dv">2</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>result</span></code></pre></div>
+<pre><code>## $clus_id
+##   [1] 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 1 2 2 1 2 1 2 1 2 1 2 1 2 1
+##  [38] 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2
+##  [75] 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1
+## [112] 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2
+## [149] 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 2 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1
+## [186] 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2
+## 
+## $coef
+##   [1]  0.8607067 -1.0089524  0.4872384 -1.0089527  1.3139655 -1.0089526
+##   [7]  0.9685047 -1.2040353  0.9685045 -1.0089525  0.8857161 -1.2287450
+##  [13]  0.9685046 -1.0089525  0.8013349 -1.0089525  0.9685046 -1.0089524
+##  [19]  0.9685048 -0.9569179  0.9685046 -1.0089524  0.9685046  0.9685047
+##  [25] -1.0089524 -1.2444607  0.9126955 -1.0768398  0.9685047 -0.7177611
+##  [31]  0.9685047 -1.0089524  0.7128878 -1.0089525  0.9685047 -1.0089525
+##  [37]  0.9685047 -1.0089525  0.9685048 -1.0089524  0.8750918 -1.0089524
+##  [43]  0.9685047 -0.8915116  0.9685046 -1.0089525  0.9685046 -1.0089525
+##  [49]  0.9685046 -1.0089525  0.9685049 -0.8005607  1.0135003 -1.0089525
+##  [55]  0.9685046 -1.1364763  0.9685047 -1.0089524  1.1759940 -0.8176971
+##  [61]  0.7955621 -1.0089524  0.9685047 -1.1877268  0.9685044 -0.9425496
+##  [67]  0.9685047 -1.1383169  0.9685047 -1.1769830  0.9685047 -1.0089526
+##  [73]  1.0459140 -1.0089522  1.0764190 -1.0089524  0.9685047 -1.0089525
+##  [79]  1.0336245 -1.0089525  0.9685047 -1.0089524  0.9096429 -1.0089525
+##  [85]  0.9685046 -1.0089524  0.9199853 -1.0089524  0.8935027 -1.0089524
+##  [91]  1.0678417 -1.0089525  0.9685047 -1.1876684  0.8812924 -1.0089524
+##  [97]  0.9685047 -1.0869988  0.9685047 -1.0089524  0.9685046 -1.0089527
+## [103]  0.9685047 -1.4806010  0.9685047 -1.0089526  0.9685046 -1.0089524
+## [109]  1.0923621 -1.0089527  0.9685047 -1.0671833  0.9685046 -1.0089524
+## [115]  0.9685047 -1.1770077  1.0456890 -1.0089524  0.9685047 -1.0089524
+## [121]  0.9685047 -1.0089525  0.9685042 -1.0089525  0.9685047 -1.0089527
+## [127]  0.9685047 -1.0089524  0.9685045 -1.0089524  1.1095840 -1.0089525
+## [133]  0.9685046 -1.0089524  0.9685047 -1.0089523  0.9685047 -1.0089525
+## [139]  0.9685045 -0.7493079  0.9685047 -0.7368548  0.9685047 -1.0089526
+## [145]  0.9685047 -1.0089525  1.3153036 -1.0089525  0.9034018 -1.3834076
+## [151]  0.9685045 -1.0089526  1.0251941 -0.6888292  0.9685047 -1.0089524
+## [157]  0.9685046 -1.0089524  1.0529782 -1.0089525  0.9685046 -1.0089525
+## [163]  0.9685047 -1.0089525 -1.0089524 -1.0089525  0.9685047 -1.0089524
+## [169]  0.9685047 -1.0089523  0.9685047 -0.9358615  1.0880163 -1.0089525
+## [175]  0.9685045 -1.1243413  0.9685047 -1.1455922  0.9685047 -0.8927342
+## [181]  0.9685047 -1.0089524  0.9685046 -1.0089525  0.9685050 -1.0089525
+## [187]  0.9151134 -1.0089525  0.9685046 -1.0089522  0.9685047 -1.0089525
+## [193]  0.9685047 -1.0089525  0.9685046 -1.0089524  0.9685046 -1.0089524
+## [199]  1.6057997 -1.0089525</code></pre>
+</div>
+<div id="conducting-em-for-repeated-experiment" class="section level2">
+<h2>Conducting EM for repeated experiment</h2>
+<p>The source R code for <em>emforreR</em> is as follows:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="cf">function</span>(data) {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  s <span class="ot">&lt;-</span> data<span class="sc">$</span>type</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="fu">length</span>(<span class="fu">rownames</span>(data))</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  t <span class="ot">&lt;-</span> <span class="fu">length</span>(data) <span class="sc">-</span> <span class="dv">1</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> data[<span class="fu">colnames</span>(data) <span class="sc">!=</span> <span class="st">&#39;type&#39;</span>]</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  log.lik <span class="ot">&lt;-</span> <span class="cf">function</span>(alpha, beta, mu, gamma, lambda, sigma1, sigma2, tau1, tau2) {</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    like <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n) {</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span> (j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>t) {</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>        like <span class="ot">&lt;-</span> like <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">-</span> s[i]) <span class="sc">*</span> <span class="fu">log</span>(<span class="fu">dnorm</span>(y[i,j], alpha[i], sigma1)) <span class="sc">+</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>          s[i] <span class="sc">*</span> <span class="fu">log</span>((<span class="dv">1</span> <span class="sc">-</span> lambda) <span class="sc">*</span> <span class="fu">dnorm</span>(y[i,j], alpha[i], sigma1) <span class="sc">+</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>                       lambda <span class="sc">*</span> <span class="fu">dnorm</span>(y[i,j], alpha[i] <span class="sc">+</span> beta, sigma2))</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>      like <span class="ot">&lt;-</span> like <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">-</span> s[i]) <span class="sc">*</span> <span class="fu">log</span>(<span class="fu">dnorm</span>(alpha[i], mu, tau1)) <span class="sc">+</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>        s[i]  <span class="sc">*</span> <span class="fu">log</span>(<span class="fu">dnorm</span>(alpha[i], mu <span class="sc">+</span> gamma, tau2))</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    like</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>  alpha0 <span class="ot">&lt;-</span> <span class="fu">rowMeans</span>(y)</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>  mu0 <span class="ot">&lt;-</span> <span class="fu">mean</span>(alpha0)</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>  gamma0 <span class="ot">&lt;-</span> <span class="dv">100</span>; beta0 <span class="ot">&lt;-</span> <span class="dv">300</span>; lambda0 <span class="ot">&lt;-</span> <span class="fl">0.5</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>  sigma10 <span class="ot">&lt;-</span> sigma20 <span class="ot">&lt;-</span> tau10 <span class="ot">&lt;-</span> tau20 <span class="ot">&lt;-</span> <span class="dv">10</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>  iters <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> (<span class="cn">TRUE</span>) {</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>      <span class="co"># update xi</span></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>      xi0 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="at">nrow =</span> n, <span class="at">ncol =</span> t)</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n) {</span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>        yi <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(y[i,])</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>        enum <span class="ot">&lt;-</span> <span class="fu">exp</span>((yi <span class="sc">-</span> alpha0[i] <span class="sc">-</span> beta0)<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">*</span> sigma20<span class="sc">^</span><span class="dv">2</span>) <span class="sc">-</span></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>                      (yi <span class="sc">-</span> alpha0[i])<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">*</span> sigma10<span class="sc">^</span><span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>                      <span class="fu">log</span>(<span class="dv">1</span> <span class="sc">-</span> lambda0) <span class="sc">-</span> <span class="fu">log</span>(lambda0) <span class="sc">+</span></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>                      <span class="fu">log</span>(sigma20) <span class="sc">-</span> <span class="fu">log</span>(sigma10))</span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>        xi0[i,] <span class="ot">&lt;-</span> s[i] <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">+</span> enum)</span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>      <span class="co"># update lambda</span></span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>      lambda1 <span class="ot">&lt;-</span> <span class="fu">sum</span>(xi0) <span class="sc">/</span> <span class="fu">sum</span>(s) <span class="sc">/</span> t</span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>      <span class="co"># update alpha</span></span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>      alpha1 <span class="ot">&lt;-</span> <span class="fu">numeric</span>(n)</span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n) {</span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a>        numer1 <span class="ot">&lt;-</span> <span class="fu">sum</span>((<span class="dv">1</span> <span class="sc">-</span> xi0[i,]) <span class="sc">*</span> y[i,] <span class="sc">/</span> sigma10<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> xi0[i,] <span class="sc">*</span> (y[i,] <span class="sc">-</span> beta0) <span class="sc">/</span> sigma20<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>        denom1 <span class="ot">&lt;-</span> <span class="fu">sum</span>((<span class="dv">1</span> <span class="sc">-</span> xi0[i,]) <span class="sc">/</span> sigma10<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> xi0[i,] <span class="sc">/</span> sigma20<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>        numer2 <span class="ot">&lt;-</span> (<span class="dv">1</span> <span class="sc">-</span> s[i]) <span class="sc">*</span> mu0 <span class="sc">/</span> tau10<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> s[i] <span class="sc">*</span> (mu0 <span class="sc">+</span> gamma0) <span class="sc">/</span> tau20<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>        denom2 <span class="ot">&lt;-</span> (<span class="dv">1</span> <span class="sc">-</span> s[i]) <span class="sc">/</span> tau10<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> s[i] <span class="sc">/</span> tau20<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>        alpha1[i] <span class="ot">&lt;-</span> (numer1 <span class="sc">+</span> numer2) <span class="sc">/</span> (denom1 <span class="sc">+</span> denom2)</span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a>      <span class="co"># update beta</span></span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a>      betai <span class="ot">&lt;-</span> <span class="fu">numeric</span>(n)</span>
+<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n) { betai[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(xi0[i,] <span class="sc">*</span> (y[i,] <span class="sc">-</span> alpha1[i])) }</span>
+<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a>      beta1 <span class="ot">&lt;-</span> <span class="fu">sum</span>(betai) <span class="sc">/</span> <span class="fu">sum</span>(xi0)</span>
+<span id="cb4-55"><a href="#cb4-55" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb4-56"><a href="#cb4-56" aria-hidden="true" tabindex="-1"></a>      <span class="co"># update sigma1</span></span>
+<span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a>      sigma1i <span class="ot">&lt;-</span> <span class="fu">numeric</span>(n)</span>
+<span id="cb4-58"><a href="#cb4-58" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n) { sigma1i[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>((<span class="dv">1</span> <span class="sc">-</span> xi0[i,]) <span class="sc">*</span> (y[i,] <span class="sc">-</span> alpha1[i])<span class="sc">^</span><span class="dv">2</span>) }</span>
+<span id="cb4-59"><a href="#cb4-59" aria-hidden="true" tabindex="-1"></a>      sigma11 <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">sum</span>(sigma1i) <span class="sc">/</span> <span class="fu">sum</span>(<span class="dv">1</span> <span class="sc">-</span> xi0))</span>
+<span id="cb4-60"><a href="#cb4-60" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb4-61"><a href="#cb4-61" aria-hidden="true" tabindex="-1"></a>      <span class="co"># update sigma2</span></span>
+<span id="cb4-62"><a href="#cb4-62" aria-hidden="true" tabindex="-1"></a>      sigma2i <span class="ot">&lt;-</span> <span class="fu">numeric</span>(n)</span>
+<span id="cb4-63"><a href="#cb4-63" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n) { sigma2i[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(xi0[i,] <span class="sc">*</span> (y[i,] <span class="sc">-</span> alpha1[i] <span class="sc">-</span> beta1)<span class="sc">^</span><span class="dv">2</span>) }</span>
+<span id="cb4-64"><a href="#cb4-64" aria-hidden="true" tabindex="-1"></a>      sigma21 <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">sum</span>(sigma2i) <span class="sc">/</span> <span class="fu">sum</span>(xi0))</span>
+<span id="cb4-65"><a href="#cb4-65" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb4-66"><a href="#cb4-66" aria-hidden="true" tabindex="-1"></a>      <span class="co"># update mu, gamma, tau1, tau2</span></span>
+<span id="cb4-67"><a href="#cb4-67" aria-hidden="true" tabindex="-1"></a>      mu1 <span class="ot">&lt;-</span> <span class="fu">sum</span>((<span class="dv">1</span> <span class="sc">-</span> s) <span class="sc">*</span> alpha1) <span class="sc">/</span> <span class="fu">sum</span>(<span class="dv">1</span> <span class="sc">-</span> s)</span>
+<span id="cb4-68"><a href="#cb4-68" aria-hidden="true" tabindex="-1"></a>      gamma1 <span class="ot">&lt;-</span> <span class="fu">sum</span>(s <span class="sc">*</span> alpha1) <span class="sc">/</span> <span class="fu">sum</span>(s) <span class="sc">-</span> mu1</span>
+<span id="cb4-69"><a href="#cb4-69" aria-hidden="true" tabindex="-1"></a>      tau11 <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">sum</span>((<span class="dv">1</span> <span class="sc">-</span> s) <span class="sc">*</span> (alpha1 <span class="sc">-</span> mu1)<span class="sc">^</span><span class="dv">2</span>) <span class="sc">/</span> <span class="fu">sum</span>(<span class="dv">1</span> <span class="sc">-</span> s))</span>
+<span id="cb4-70"><a href="#cb4-70" aria-hidden="true" tabindex="-1"></a>      tau21 <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">sum</span>(s <span class="sc">*</span> (alpha1 <span class="sc">-</span> mu1 <span class="sc">-</span> gamma1)<span class="sc">^</span><span class="dv">2</span>) <span class="sc">/</span> <span class="fu">sum</span>(s))</span>
+<span id="cb4-71"><a href="#cb4-71" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb4-72"><a href="#cb4-72" aria-hidden="true" tabindex="-1"></a>      <span class="co"># break or not?</span></span>
+<span id="cb4-73"><a href="#cb4-73" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (<span class="fu">abs</span>(lambda0 <span class="sc">-</span> lambda1) <span class="sc">&lt;</span> <span class="fl">1e-6</span> <span class="sc">&amp;&amp;</span></span>
+<span id="cb4-74"><a href="#cb4-74" aria-hidden="true" tabindex="-1"></a>          <span class="fu">mean</span>(<span class="fu">abs</span>(beta0 <span class="sc">-</span> beta1), <span class="fu">abs</span>(mu0 <span class="sc">-</span> mu1), <span class="fu">abs</span>(gamma0 <span class="sc">-</span> gamma1)) <span class="sc">&lt;</span> <span class="fl">1e-2</span> <span class="sc">&amp;&amp;</span></span>
+<span id="cb4-75"><a href="#cb4-75" aria-hidden="true" tabindex="-1"></a>          <span class="fu">mean</span>(<span class="fu">abs</span>(sigma10 <span class="sc">-</span> sigma11), <span class="fu">abs</span>(sigma20 <span class="sc">-</span> sigma21)) <span class="sc">&lt;</span> <span class="fl">1e-4</span> <span class="sc">&amp;&amp;</span></span>
+<span id="cb4-76"><a href="#cb4-76" aria-hidden="true" tabindex="-1"></a>          <span class="fu">mean</span>(<span class="fu">abs</span>(tau10 <span class="sc">-</span> tau11), <span class="fu">abs</span>(tau20 <span class="sc">-</span> tau21)) <span class="sc">&lt;</span> <span class="fl">1e-4</span> <span class="sc">&amp;&amp;</span></span>
+<span id="cb4-77"><a href="#cb4-77" aria-hidden="true" tabindex="-1"></a>          <span class="fu">mean</span>(<span class="fu">abs</span>(alpha0 <span class="sc">-</span> alpha1)) <span class="sc">&lt;</span> <span class="fl">1e-2</span>) { <span class="cf">break</span> }</span>
+<span id="cb4-78"><a href="#cb4-78" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb4-79"><a href="#cb4-79" aria-hidden="true" tabindex="-1"></a>      <span class="co"># iteration</span></span>
+<span id="cb4-80"><a href="#cb4-80" aria-hidden="true" tabindex="-1"></a>      lambda0 <span class="ot">&lt;-</span> lambda1</span>
+<span id="cb4-81"><a href="#cb4-81" aria-hidden="true" tabindex="-1"></a>      alpha0 <span class="ot">&lt;-</span> alpha1</span>
+<span id="cb4-82"><a href="#cb4-82" aria-hidden="true" tabindex="-1"></a>      beta0 <span class="ot">&lt;-</span> beta1</span>
+<span id="cb4-83"><a href="#cb4-83" aria-hidden="true" tabindex="-1"></a>      sigma10 <span class="ot">&lt;-</span> sigma11</span>
+<span id="cb4-84"><a href="#cb4-84" aria-hidden="true" tabindex="-1"></a>      sigma20 <span class="ot">&lt;-</span> sigma21</span>
+<span id="cb4-85"><a href="#cb4-85" aria-hidden="true" tabindex="-1"></a>      mu0 <span class="ot">&lt;-</span> mu1</span>
+<span id="cb4-86"><a href="#cb4-86" aria-hidden="true" tabindex="-1"></a>      gamma0 <span class="ot">&lt;-</span> gamma1</span>
+<span id="cb4-87"><a href="#cb4-87" aria-hidden="true" tabindex="-1"></a>      tau10 <span class="ot">&lt;-</span> tau11</span>
+<span id="cb4-88"><a href="#cb4-88" aria-hidden="true" tabindex="-1"></a>      tau20 <span class="ot">&lt;-</span> tau21</span>
+<span id="cb4-89"><a href="#cb4-89" aria-hidden="true" tabindex="-1"></a>      iters <span class="ot">&lt;-</span> iters <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb4-90"><a href="#cb4-90" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-91"><a href="#cb4-91" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">alpha =</span> alpha1, <span class="at">beta =</span> beta1, <span class="at">mu =</span> mu1, <span class="at">gamma =</span> gamma1, <span class="at">lambda =</span> lambda1,</span>
+<span id="cb4-92"><a href="#cb4-92" aria-hidden="true" tabindex="-1"></a>       <span class="at">sigma =</span> <span class="fu">c</span>(sigma11, sigma21), <span class="at">tau =</span> <span class="fu">c</span>(tau11, tau21), <span class="at">iters =</span> iters,</span>
+<span id="cb4-93"><a href="#cb4-93" aria-hidden="true" tabindex="-1"></a>       <span class="at">log.lik =</span> <span class="fu">log.lik</span>(alpha1, beta1, mu1, gamma1, lambda1, sigma11, sigma21, tau11, tau21))</span>
+<span id="cb4-94"><a href="#cb4-94" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>The above R code involves two loops, which could be very slow even
+for R-3.01 or any higher version. The corresponding C++ code is as
+follows.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>List <span class="fu">emforreC</span>(DataFrame data) {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  const int n <span class="ot">=</span> <span class="fu">data.nrows</span>();</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  const int t <span class="ot">=</span> <span class="fu">data.size</span>() <span class="sc">-</span> <span class="dv">1</span>;</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  NumericVector s <span class="ot">=</span> as<span class="sc">&lt;</span>NumericVector<span class="sc">&gt;</span>(data[<span class="st">&quot;type&quot;</span>]);</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  NumericMatrix <span class="fu">y</span>(n, t);</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (int <span class="at">j =</span> <span class="dv">1</span>; j <span class="sc">&lt;=</span> t; j<span class="sc">++</span>) {</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    NumericVector yj <span class="ot">=</span> as<span class="sc">&lt;</span>NumericVector<span class="sc">&gt;</span>(data[j]);</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (int <span class="at">i =</span> <span class="dv">0</span>; i <span class="sc">&lt;</span> n; i<span class="sc">++</span>) {</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>      <span class="fu">y</span>(i, j<span class="dv">-1</span>) <span class="ot">=</span> yj[i];</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  double sums <span class="ot">=</span> <span class="dv">0</span>;</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (int <span class="at">i =</span> <span class="dv">0</span>; i <span class="sc">&lt;</span> n; i<span class="sc">++</span>) {</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    sums <span class="sc">+</span><span class="er">=</span> s[i];</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  NumericVector <span class="fu">alpha0</span>(n), <span class="fu">alpha1</span>(n);</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>  double mu0 <span class="ot">=</span> <span class="dv">0</span>, mu1, gamma0 <span class="ot">=</span> <span class="dv">100</span>, gamma1;</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>  double beta0 <span class="ot">=</span> <span class="dv">300</span>, beta1, lambda0 <span class="ot">=</span> <span class="fl">0.5</span>, lambda1;</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>  double sigma10 <span class="ot">=</span> <span class="dv">10</span>, sigma11, sigma20 <span class="ot">=</span> <span class="dv">10</span>, sigma21;</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>  double tau10 <span class="ot">=</span> <span class="dv">10</span>, tau11, tau20 <span class="ot">=</span> <span class="dv">10</span>, tau21;</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (int <span class="at">i =</span> <span class="dv">0</span>; i <span class="sc">&lt;</span> n; i<span class="sc">++</span>) {</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>    alpha0[i] <span class="ot">=</span> <span class="dv">0</span>;</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (int <span class="at">j =</span> <span class="dv">0</span>; j <span class="sc">&lt;</span> t; j<span class="sc">++</span>) {</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>      alpha0[i] <span class="sc">+</span><span class="er">=</span> <span class="fu">y</span>(i, j);</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    alpha0[i] <span class="sc">/</span><span class="er">=</span> t;</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>    mu0 <span class="sc">+</span><span class="er">=</span> alpha0[i];</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>  mu0 <span class="sc">/</span><span class="er">=</span> n;</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>  int iters <span class="ot">=</span> <span class="dv">0</span>;</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> (<span class="cn">TRUE</span>) {</span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>    NumericMatrix <span class="fu">xi0</span>(n, t);</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (int <span class="at">i =</span> <span class="dv">0</span>; i <span class="sc">&lt;</span> n; i<span class="sc">++</span>) {</span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span> (int <span class="at">j =</span> <span class="dv">0</span>; j <span class="sc">&lt;</span> t; j<span class="sc">++</span>) {</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>        double enumij <span class="ot">=</span> <span class="fu">exp</span>(<span class="fu">pow</span>(<span class="fu">y</span>(i, j) <span class="sc">-</span> alpha0[i] <span class="sc">-</span> beta0, <span class="dv">2</span>) <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">*</span> <span class="fu">pow</span>(sigma20, <span class="dv">2</span>)) <span class="sc">-</span> <span class="fu">pow</span>(<span class="fu">y</span>(i, j) <span class="sc">-</span> alpha0[i], <span class="dv">2</span>) <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">*</span> <span class="fu">pow</span>(sigma10, <span class="dv">2</span>)));</span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>        <span class="fu">xi0</span>(i, j) <span class="ot">=</span> s[i] <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">+</span> enumij <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> lambda0) <span class="sc">/</span> lambda0 <span class="sc">*</span> sigma20 <span class="sc">/</span> sigma10);</span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>    double sumxi0 <span class="ot">=</span> <span class="dv">0</span>;</span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (int <span class="at">i =</span> <span class="dv">0</span>; i <span class="sc">&lt;</span> n; i<span class="sc">++</span>)</span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span> (int <span class="at">j =</span> <span class="dv">0</span>; j <span class="sc">&lt;</span> t; j<span class="sc">++</span>)</span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>        sumxi0 <span class="sc">+</span><span class="er">=</span> <span class="fu">xi0</span>(i, j);</span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>    lambda1 <span class="ot">=</span> sumxi0 <span class="sc">/</span> sums <span class="sc">/</span> t;</span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (int <span class="at">i =</span> <span class="dv">0</span>; i <span class="sc">&lt;</span> n; i<span class="sc">++</span>) {</span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a>      double numer1 <span class="ot">=</span> <span class="dv">0</span>, denom1 <span class="ot">=</span> <span class="dv">0</span>;</span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span> (int <span class="at">j =</span> <span class="dv">0</span>; j <span class="sc">&lt;</span> t; j<span class="sc">++</span>) {</span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a>        numer1 <span class="sc">+</span><span class="er">=</span> (<span class="dv">1</span> <span class="sc">-</span> <span class="fu">xi0</span>(i, j)) <span class="sc">*</span> <span class="fu">y</span>(i, j) <span class="sc">/</span> <span class="fu">pow</span>(sigma10, <span class="dv">2</span>) <span class="sc">+</span> <span class="fu">xi0</span>(i, j) <span class="sc">*</span> (<span class="fu">y</span>(i, j) <span class="sc">-</span> beta0) <span class="sc">/</span> <span class="fu">pow</span>(sigma20, <span class="dv">2</span>);</span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a>        denom1 <span class="sc">+</span><span class="er">=</span> (<span class="dv">1</span> <span class="sc">-</span> <span class="fu">xi0</span>(i, j)) <span class="sc">/</span> <span class="fu">pow</span>(sigma10, <span class="dv">2</span>) <span class="sc">+</span> <span class="fu">xi0</span>(i, j) <span class="sc">/</span> <span class="fu">pow</span>(sigma20, <span class="dv">2</span>);</span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a>      double numer2 <span class="ot">=</span> (<span class="dv">1</span> <span class="sc">-</span> s[i]) <span class="sc">*</span> mu0 <span class="sc">/</span> <span class="fu">pow</span>(tau10, <span class="dv">2</span>) <span class="sc">+</span> s[i] <span class="sc">*</span> (mu0 <span class="sc">+</span> gamma0) <span class="sc">/</span> <span class="fu">pow</span>(tau20, <span class="dv">2</span>);</span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a>      double denom2 <span class="ot">=</span> (<span class="dv">1</span> <span class="sc">-</span> s[i]) <span class="sc">/</span> <span class="fu">pow</span>(tau10, <span class="dv">2</span>) <span class="sc">+</span> s[i] <span class="sc">/</span> <span class="fu">pow</span>(tau20, <span class="dv">2</span>);</span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a>      alpha1[i] <span class="ot">=</span> (numer1 <span class="sc">+</span> numer2) <span class="sc">/</span> (denom1 <span class="sc">+</span> denom2);</span>
+<span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-59"><a href="#cb5-59" aria-hidden="true" tabindex="-1"></a>    double wb <span class="ot">=</span> <span class="dv">0</span>, ws1 <span class="ot">=</span> <span class="dv">0</span>, ws2 <span class="ot">=</span> <span class="dv">0</span>;</span>
+<span id="cb5-60"><a href="#cb5-60" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (int <span class="at">i =</span> <span class="dv">0</span>; i <span class="sc">&lt;</span> n; i<span class="sc">++</span>)</span>
+<span id="cb5-61"><a href="#cb5-61" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span> (int <span class="at">j =</span> <span class="dv">0</span>; j <span class="sc">&lt;</span> t; j<span class="sc">++</span>)</span>
+<span id="cb5-62"><a href="#cb5-62" aria-hidden="true" tabindex="-1"></a>        wb <span class="sc">+</span><span class="er">=</span> <span class="fu">xi0</span>(i, j) <span class="sc">*</span> (<span class="fu">y</span>(i, j) <span class="sc">-</span> alpha1[i]);</span>
+<span id="cb5-63"><a href="#cb5-63" aria-hidden="true" tabindex="-1"></a>    beta1 <span class="ot">=</span> wb <span class="sc">/</span> sumxi0;</span>
+<span id="cb5-64"><a href="#cb5-64" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (int <span class="at">i =</span> <span class="dv">0</span>; i <span class="sc">&lt;</span> n; i<span class="sc">++</span>)</span>
+<span id="cb5-65"><a href="#cb5-65" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span> (int <span class="at">j =</span> <span class="dv">0</span>; j <span class="sc">&lt;</span> t; j<span class="sc">++</span>) {</span>
+<span id="cb5-66"><a href="#cb5-66" aria-hidden="true" tabindex="-1"></a>        ws1 <span class="sc">+</span><span class="er">=</span> (<span class="dv">1</span> <span class="sc">-</span> <span class="fu">xi0</span>(i, j)) <span class="sc">*</span> <span class="fu">pow</span>(<span class="fu">y</span>(i, j) <span class="sc">-</span> alpha1[i], <span class="dv">2</span>);</span>
+<span id="cb5-67"><a href="#cb5-67" aria-hidden="true" tabindex="-1"></a>        ws2 <span class="sc">+</span><span class="er">=</span> <span class="fu">xi0</span>(i, j) <span class="sc">*</span> <span class="fu">pow</span>(<span class="fu">y</span>(i, j) <span class="sc">-</span> alpha1[i] <span class="sc">-</span> beta1, <span class="dv">2</span>);</span>
+<span id="cb5-68"><a href="#cb5-68" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb5-69"><a href="#cb5-69" aria-hidden="true" tabindex="-1"></a>      sigma11 <span class="ot">=</span> <span class="fu">sqrt</span>(ws1 <span class="sc">/</span> (n<span class="sc">*</span>t <span class="sc">-</span> sumxi0));</span>
+<span id="cb5-70"><a href="#cb5-70" aria-hidden="true" tabindex="-1"></a>    sigma21 <span class="ot">=</span> <span class="fu">sqrt</span>(ws2 <span class="sc">/</span> sumxi0);</span>
+<span id="cb5-71"><a href="#cb5-71" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-72"><a href="#cb5-72" aria-hidden="true" tabindex="-1"></a>    double wm <span class="ot">=</span> <span class="dv">0</span>, wg <span class="ot">=</span> <span class="dv">0</span>, wt1 <span class="ot">=</span> <span class="dv">0</span>, wt2 <span class="ot">=</span> <span class="dv">0</span>;</span>
+<span id="cb5-73"><a href="#cb5-73" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (int <span class="at">i =</span> <span class="dv">0</span>; i <span class="sc">&lt;</span> n; i<span class="sc">++</span>)</span>
+<span id="cb5-74"><a href="#cb5-74" aria-hidden="true" tabindex="-1"></a>      wm <span class="sc">+</span><span class="er">=</span> (<span class="dv">1</span> <span class="sc">-</span> s[i]) <span class="sc">*</span> alpha1[i];</span>
+<span id="cb5-75"><a href="#cb5-75" aria-hidden="true" tabindex="-1"></a>    mu1 <span class="ot">=</span> wm <span class="sc">/</span> (n <span class="sc">-</span> sums);</span>
+<span id="cb5-76"><a href="#cb5-76" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (int <span class="at">i =</span> <span class="dv">0</span>; i <span class="sc">&lt;</span> n; i<span class="sc">++</span>)</span>
+<span id="cb5-77"><a href="#cb5-77" aria-hidden="true" tabindex="-1"></a>      wg <span class="sc">+</span><span class="er">=</span> s[i] <span class="sc">*</span> alpha1[i];</span>
+<span id="cb5-78"><a href="#cb5-78" aria-hidden="true" tabindex="-1"></a>    gamma1 <span class="ot">=</span> wg <span class="sc">/</span> sums <span class="sc">-</span> mu1;</span>
+<span id="cb5-79"><a href="#cb5-79" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (int <span class="at">i =</span> <span class="dv">0</span>; i <span class="sc">&lt;</span> n; i<span class="sc">++</span>) {</span>
+<span id="cb5-80"><a href="#cb5-80" aria-hidden="true" tabindex="-1"></a>      wt1 <span class="sc">+</span><span class="er">=</span> (<span class="dv">1</span> <span class="sc">-</span> s[i]) <span class="sc">*</span> <span class="fu">pow</span>(alpha1[i] <span class="sc">-</span> mu1, <span class="dv">2</span>);</span>
+<span id="cb5-81"><a href="#cb5-81" aria-hidden="true" tabindex="-1"></a>      wt2 <span class="sc">+</span><span class="er">=</span> s[i] <span class="sc">*</span> <span class="fu">pow</span>(alpha1[i] <span class="sc">-</span> mu1 <span class="sc">-</span> gamma1, <span class="dv">2</span>);</span>
+<span id="cb5-82"><a href="#cb5-82" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb5-83"><a href="#cb5-83" aria-hidden="true" tabindex="-1"></a>    tau11 <span class="ot">=</span> <span class="fu">sqrt</span>(wt1 <span class="sc">/</span> (n <span class="sc">-</span> sums));</span>
+<span id="cb5-84"><a href="#cb5-84" aria-hidden="true" tabindex="-1"></a>    tau21 <span class="ot">=</span> <span class="fu">sqrt</span>(wt2 <span class="sc">/</span> sums);</span>
+<span id="cb5-85"><a href="#cb5-85" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-86"><a href="#cb5-86" aria-hidden="true" tabindex="-1"></a>    double sumdiffalpha <span class="ot">=</span> <span class="dv">0</span>;</span>
+<span id="cb5-87"><a href="#cb5-87" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (int <span class="at">i =</span> <span class="dv">0</span>; i <span class="sc">&lt;</span> n; i<span class="sc">++</span>)</span>
+<span id="cb5-88"><a href="#cb5-88" aria-hidden="true" tabindex="-1"></a>      sumdiffalpha <span class="sc">+</span><span class="er">=</span> <span class="fu">abs</span>(alpha0[i] <span class="sc">-</span> alpha1[i]);</span>
+<span id="cb5-89"><a href="#cb5-89" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-90"><a href="#cb5-90" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">abs</span>(lambda0 <span class="sc">-</span> lambda1) <span class="sc">&lt;</span> <span class="fl">1e-6</span> <span class="sc">&amp;&amp;</span></span>
+<span id="cb5-91"><a href="#cb5-91" aria-hidden="true" tabindex="-1"></a>        <span class="fu">abs</span>(beta0 <span class="sc">-</span> beta1) <span class="sc">+</span> <span class="fu">abs</span>(mu0 <span class="sc">-</span> mu1) <span class="sc">+</span> <span class="fu">abs</span>(gamma0 <span class="sc">-</span> gamma1) <span class="sc">&lt;</span> <span class="fl">3e-2</span> <span class="sc">&amp;&amp;</span></span>
+<span id="cb5-92"><a href="#cb5-92" aria-hidden="true" tabindex="-1"></a>        <span class="fu">abs</span>(sigma10 <span class="sc">-</span> sigma11) <span class="sc">+</span> <span class="fu">abs</span>(sigma20 <span class="sc">-</span> sigma21) <span class="sc">&lt;</span> <span class="fl">2e-4</span> <span class="sc">&amp;&amp;</span></span>
+<span id="cb5-93"><a href="#cb5-93" aria-hidden="true" tabindex="-1"></a>        <span class="fu">abs</span>(tau10 <span class="sc">-</span> tau11) <span class="sc">+</span> <span class="fu">abs</span>(tau20 <span class="sc">-</span> tau21) <span class="sc">&lt;</span> <span class="fl">2e-4</span> <span class="sc">&amp;&amp;</span></span>
+<span id="cb5-94"><a href="#cb5-94" aria-hidden="true" tabindex="-1"></a>        sumdiffalpha <span class="sc">/</span> n <span class="sc">&lt;</span> <span class="fl">1e-2</span>) { <span class="cf">break</span>; }</span>
+<span id="cb5-95"><a href="#cb5-95" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-96"><a href="#cb5-96" aria-hidden="true" tabindex="-1"></a>    lambda0 <span class="ot">=</span> lambda1;</span>
+<span id="cb5-97"><a href="#cb5-97" aria-hidden="true" tabindex="-1"></a>    alpha0 <span class="ot">=</span> alpha1;</span>
+<span id="cb5-98"><a href="#cb5-98" aria-hidden="true" tabindex="-1"></a>    beta0 <span class="ot">=</span> beta1;</span>
+<span id="cb5-99"><a href="#cb5-99" aria-hidden="true" tabindex="-1"></a>    sigma10 <span class="ot">=</span> sigma11;</span>
+<span id="cb5-100"><a href="#cb5-100" aria-hidden="true" tabindex="-1"></a>    sigma20 <span class="ot">=</span> sigma21;</span>
+<span id="cb5-101"><a href="#cb5-101" aria-hidden="true" tabindex="-1"></a>    mu0 <span class="ot">=</span> mu1;</span>
+<span id="cb5-102"><a href="#cb5-102" aria-hidden="true" tabindex="-1"></a>    gamma0 <span class="ot">=</span> gamma1;</span>
+<span id="cb5-103"><a href="#cb5-103" aria-hidden="true" tabindex="-1"></a>    tau10 <span class="ot">=</span> tau11;</span>
+<span id="cb5-104"><a href="#cb5-104" aria-hidden="true" tabindex="-1"></a>    tau20 <span class="ot">=</span> tau21;</span>
+<span id="cb5-105"><a href="#cb5-105" aria-hidden="true" tabindex="-1"></a>    iters <span class="ot">=</span> iters <span class="sc">+</span> <span class="dv">1</span>;</span>
+<span id="cb5-106"><a href="#cb5-106" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-107"><a href="#cb5-107" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-108"><a href="#cb5-108" aria-hidden="true" tabindex="-1"></a>  NumericVector <span class="fu">sigma</span>(<span class="dv">2</span>), <span class="fu">tau</span>(<span class="dv">2</span>);</span>
+<span id="cb5-109"><a href="#cb5-109" aria-hidden="true" tabindex="-1"></a>  sigma[<span class="dv">0</span>] <span class="ot">=</span> sigma10; sigma[<span class="dv">1</span>] <span class="ot">=</span> sigma20;</span>
+<span id="cb5-110"><a href="#cb5-110" aria-hidden="true" tabindex="-1"></a>  tau[<span class="dv">0</span>] <span class="ot">=</span> tau10; tau[<span class="dv">1</span>] <span class="ot">=</span> tau20;</span>
+<span id="cb5-111"><a href="#cb5-111" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-112"><a href="#cb5-112" aria-hidden="true" tabindex="-1"></a>  double like <span class="ot">=</span> <span class="dv">0</span>, pi <span class="ot">=</span> <span class="fl">3.14159265359</span>;</span>
+<span id="cb5-113"><a href="#cb5-113" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (int <span class="at">i =</span> <span class="dv">0</span>; i <span class="sc">&lt;</span> n; i<span class="sc">++</span>) {</span>
+<span id="cb5-114"><a href="#cb5-114" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (int <span class="at">j =</span> <span class="dv">0</span>; j <span class="sc">&lt;</span> t; j<span class="sc">++</span>) {</span>
+<span id="cb5-115"><a href="#cb5-115" aria-hidden="true" tabindex="-1"></a>      double dnorm1 <span class="ot">=</span> <span class="sc">-</span><span class="fu">log</span>(<span class="dv">2</span> <span class="sc">*</span> pi <span class="sc">*</span> <span class="fu">pow</span>(sigma[<span class="dv">0</span>], <span class="dv">2</span>)) <span class="sc">/</span> <span class="dv">2</span> <span class="sc">-</span> <span class="fu">pow</span>(<span class="fu">y</span>(i, j) <span class="sc">-</span> alpha0[i], <span class="dv">2</span>) <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">*</span> <span class="fu">pow</span>(sigma[<span class="dv">0</span>], <span class="dv">2</span>));</span>
+<span id="cb5-116"><a href="#cb5-116" aria-hidden="true" tabindex="-1"></a>      double dnorm2 <span class="ot">=</span> <span class="sc">-</span><span class="fu">log</span>(<span class="dv">2</span> <span class="sc">*</span> pi <span class="sc">*</span> <span class="fu">pow</span>(sigma[<span class="dv">1</span>], <span class="dv">2</span>)) <span class="sc">/</span> <span class="dv">2</span> <span class="sc">-</span> <span class="fu">pow</span>(<span class="fu">y</span>(i, j) <span class="sc">-</span> alpha0[i] <span class="sc">-</span> beta0, <span class="dv">2</span>) <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">*</span> <span class="fu">pow</span>(sigma[<span class="dv">1</span>], <span class="dv">2</span>));</span>
+<span id="cb5-117"><a href="#cb5-117" aria-hidden="true" tabindex="-1"></a>      like <span class="sc">+</span><span class="er">=</span> (<span class="dv">1</span> <span class="sc">-</span> s[i]) <span class="sc">*</span> dnorm1 <span class="sc">+</span> s[i] <span class="sc">*</span> <span class="fu">log</span>((<span class="dv">1</span> <span class="sc">-</span> lambda0) <span class="sc">*</span> <span class="fu">exp</span>(dnorm1) <span class="sc">+</span> lambda0 <span class="sc">*</span> <span class="fu">exp</span>(dnorm2));</span>
+<span id="cb5-118"><a href="#cb5-118" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb5-119"><a href="#cb5-119" aria-hidden="true" tabindex="-1"></a>    double dnorm1 <span class="ot">=</span> <span class="sc">-</span><span class="fu">log</span>(<span class="dv">2</span> <span class="sc">*</span> pi <span class="sc">*</span> <span class="fu">pow</span>(tau[<span class="dv">0</span>], <span class="dv">2</span>)) <span class="sc">/</span> <span class="dv">2</span> <span class="sc">-</span> <span class="fu">pow</span>(alpha0[i] <span class="sc">-</span> mu0, <span class="dv">2</span>) <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">*</span> <span class="fu">pow</span>(tau[<span class="dv">0</span>], <span class="dv">2</span>));</span>
+<span id="cb5-120"><a href="#cb5-120" aria-hidden="true" tabindex="-1"></a>    double dnorm2 <span class="ot">=</span> <span class="sc">-</span><span class="fu">log</span>(<span class="dv">2</span> <span class="sc">*</span> pi <span class="sc">*</span> <span class="fu">pow</span>(tau[<span class="dv">1</span>], <span class="dv">2</span>)) <span class="sc">/</span> <span class="dv">2</span> <span class="sc">-</span> <span class="fu">pow</span>(alpha0[i] <span class="sc">-</span> mu0 <span class="sc">-</span> gamma0, <span class="dv">2</span>) <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">*</span> <span class="fu">pow</span>(tau[<span class="dv">1</span>], <span class="dv">2</span>));</span>
+<span id="cb5-121"><a href="#cb5-121" aria-hidden="true" tabindex="-1"></a>    like <span class="sc">+</span><span class="er">=</span> (<span class="dv">1</span> <span class="sc">-</span> s[i]) <span class="sc">*</span> dnorm1 <span class="sc">+</span> s[i]  <span class="sc">*</span> dnorm2;</span>
+<span id="cb5-122"><a href="#cb5-122" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-123"><a href="#cb5-123" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-124"><a href="#cb5-124" aria-hidden="true" tabindex="-1"></a>  return List<span class="sc">::</span><span class="fu">create</span>(<span class="fu">Named</span>(<span class="st">&quot;alpha&quot;</span>) <span class="ot">=</span> alpha0, <span class="fu">Named</span>(<span class="st">&quot;beta&quot;</span>) <span class="ot">=</span> beta0, <span class="fu">Named</span>(<span class="st">&quot;mu&quot;</span>) <span class="ot">=</span> mu0,</span>
+<span id="cb5-125"><a href="#cb5-125" aria-hidden="true" tabindex="-1"></a>                            <span class="fu">Named</span>(<span class="st">&quot;gamma&quot;</span>) <span class="ot">=</span> gamma0, <span class="fu">Named</span>(<span class="st">&quot;lambda&quot;</span>) <span class="ot">=</span> lambda0,</span>
+<span id="cb5-126"><a href="#cb5-126" aria-hidden="true" tabindex="-1"></a>                            <span class="fu">Named</span>(<span class="st">&quot;sigma&quot;</span>) <span class="ot">=</span> sigma, <span class="fu">Named</span>(<span class="st">&quot;tau&quot;</span>) <span class="ot">=</span> tau, <span class="fu">Named</span>(<span class="st">&quot;iters&quot;</span>) <span class="ot">=</span> iters,</span>
+<span id="cb5-127"><a href="#cb5-127" aria-hidden="true" tabindex="-1"></a>                            <span class="fu">Named</span>(<span class="st">&quot;log.lik&quot;</span>) <span class="ot">=</span> like);</span>
+<span id="cb5-128"><a href="#cb5-128" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>The problem for the code can be described below.</p>
+<p>In an experiment in psychology, each of <span class="math inline">\(n\)</span> people—<span class="math inline">\(n_1\)</span> non-schizophrenics and <span class="math inline">\(n-n_1\)</span> schizophrenics—had their reaction
+times measured <span class="math inline">\(t\)</span> times. It is clear
+that response times are higher on average for schizophrenics. We wish to
+model it with hierarchical bayesian model: <span class="math display">\[\begin{align*}
+    y_{ij}\mid\alpha_i,z_{ij},\beta,\sigma_1^2,\sigma_2^2&amp;\sim
+N(\alpha_i+\beta z_{ij},(1-z_{ij})\sigma_1^2+z_{ij}\sigma_2^2),\\
+    \alpha_i\mid s_i,\mu,\gamma,\tau_1^2,\tau_2^2&amp;\sim N(\mu+\gamma
+s_i,(1-s_i)\tau_1^2+s_i\tau_2^2),\\
+    z_{ij}\mid\lambda,s_i&amp;\sim\text{Bernoulli}(\lambda s_i),
+\end{align*}\]</span> where <span class="math inline">\(s_i\)</span> is
+the indicator of schizophrenics, <span class="math inline">\(z_{ij}\)</span> is the indicator of suffering from
+schizophrenia, and <span class="math inline">\(\lambda\)</span> is the
+suffering rate.</p>
+<p>Theory behind the function can be found on <a href="https://kausiujik.github.io/2022/11/28/StatComp22034function/">my
+website</a>.</p>
+<p>The <em>emforre</em> function should be fed with the
+<em>data</em>(containing <span class="math inline">\(y_{ij}\)</span>s
+and <span class="math inline">\(s_i\)</span>s) and return the result of
+<span class="math inline">\(\pmb\alpha=(\alpha_1,\dots,\alpha_n)\)</span>,
+<span class="math inline">\(\beta\)</span>, <span class="math inline">\(\gamma\)</span>, <span class="math inline">\(\mu\)</span>, <span class="math inline">\(\lambda\)</span>, <span class="math inline">\(\sigma_1\)</span>, <span class="math inline">\(\sigma_2\)</span>, <span class="math inline">\(\tau_1\)</span>, and <span class="math inline">\(\tau_2\)</span>, with iterations and the optimal
+log likelihood. See the example below.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(reaction_time)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">attach</span>(reaction_time)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>resultR <span class="ot">&lt;-</span> <span class="fu">emforreR</span>(reaction_time)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>resultR</span></code></pre></div>
+<pre><code>## $alpha
+##  [1] 310.9782 361.0920 306.5917 304.2482 269.6372 336.8763 353.4007 272.5816
+##  [9] 262.9073 324.1376 309.4159 306.2210 412.8300 351.1174 434.6433 463.8438
+## [17] 437.2879
+## 
+## $beta
+## [1] 332.4154
+## 
+## $mu
+## [1] 310.1697
+## 
+## $gamma
+## [1] 90.82088
+## 
+## $lambda
+## [1] 0.3185054
+## 
+## $sigma
+## [1]  56.54459 348.18333
+## 
+## $tau
+## [1] 31.20157 54.78643
+## 
+## $iters
+## [1] 51
+## 
+## $log.lik
+## [1] -3040.695</code></pre>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>resultC <span class="ot">&lt;-</span> <span class="fu">emforreC</span>(reaction_time)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>resultC</span></code></pre></div>
+<pre><code>## $alpha
+##  [1] 310.9782 361.0921 306.5917 304.2482 269.6372 336.8764 353.4007 272.5815
+##  [9] 262.9073 324.1376 309.4159 306.2211 412.8297 351.1174 434.6420 463.8381
+## [17] 437.2874
+## 
+## $beta
+## [1] 332.4158
+## 
+## $mu
+## [1] 310.1697
+## 
+## $gamma
+## [1] 90.81969
+## 
+## $lambda
+## [1] 0.3185086
+## 
+## $sigma
+## [1]  56.54448 348.18121
+## 
+## $tau
+## [1] 31.20159 54.78521
+## 
+## $iters
+## [1] 58
+## 
+## $log.lik
+## [1] -3040.695</code></pre>
+</div>
+<div id="benchmarking-emforrer-and-emforrec" class="section level2">
+<h2>Benchmarking <em>emforreR</em> and <em>emforreC</em></h2>
+<p>In order to empirically benchmark <em>emforreR</em> and
+<em>emforreC</em>, one generates 5 replicates of (reaction_time), and
+save it in data{StatComp22034}. To load the file, one simply calls
+<em>data(reaction_time)</em>. Note that the R code is too slow so we
+just generates 5 replicates. The R code for benchmarking
+<em>emforreR</em> and <em>emforreC</em> is as follows.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(reaction_time)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">attach</span>(reaction_time)</span></code></pre></div>
+<pre><code>## The following objects are masked from reaction_time (pos = 3):
+## 
+##     ob1, ob10, ob11, ob12, ob13, ob14, ob15, ob16, ob17, ob18, ob19,
+##     ob2, ob20, ob21, ob22, ob23, ob24, ob25, ob26, ob27, ob28, ob29,
+##     ob3, ob30, ob4, ob5, ob6, ob7, ob8, ob9, type</code></pre>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>tm <span class="ot">&lt;-</span> microbenchmark<span class="sc">::</span><span class="fu">microbenchmark</span>(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">estR =</span> <span class="fu">emforreR</span>(reaction_time),</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">estC =</span> <span class="fu">emforreC</span>(reaction_time),</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">times =</span> <span class="dv">5</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">summary</span>(tm)[, <span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">3</span>,<span class="dv">5</span>,<span class="dv">6</span>)])</span></code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">expr</th>
+<th align="right">lq</th>
+<th align="right">median</th>
+<th align="right">uq</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">estR</td>
+<td align="right">22923.39764</td>
+<td align="right">22946.80230</td>
+<td align="right">23141.0523</td>
+</tr>
+<tr class="even">
+<td align="left">estC</td>
+<td align="right">15.76841</td>
+<td align="right">15.88368</td>
+<td align="right">16.1078</td>
+</tr>
+</tbody>
+</table>
+<p>The results again show an evident computational speed gain of C++
+against R.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
